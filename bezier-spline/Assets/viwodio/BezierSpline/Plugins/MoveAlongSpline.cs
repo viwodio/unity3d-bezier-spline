@@ -10,7 +10,7 @@ namespace viwodio.BezierSpline
         [SerializeField] private SplineDrawer splineDrawer;
 
         float t = 0;
-
+        float splineLength = 0;
         int previousIndex = -1;
         SplinePoint previousPoint;
         SplinePoint nextPoint;
@@ -18,6 +18,7 @@ namespace viwodio.BezierSpline
 
         void Awake()
         {
+            splineLength = splineDrawer.spline.GetLength();
             OnPointPassed();
         }
 
@@ -30,7 +31,7 @@ namespace viwodio.BezierSpline
                 transform.position = point.position;
                 transform.rotation = point.rotation;
 
-                t += moveSpeed / currentPathLength * Time.deltaTime;
+                t += moveSpeed * (1 - (currentPathLength / splineLength)) * Time.deltaTime;
 
                 if (t >= 1f)
                 {
