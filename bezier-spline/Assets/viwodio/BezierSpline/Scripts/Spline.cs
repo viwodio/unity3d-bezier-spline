@@ -206,5 +206,10 @@ namespace viwodio.BezierSpline
 
             return positions;
         }
+
+        public float GetLength()
+        {
+            return SplineUtility.SplineLength(this);
+        }
     }
 }
