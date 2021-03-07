@@ -7,47 +7,37 @@ namespace viwodio.BezierSpline
     {
         [SerializeField] private bool isMoving = true;
         [SerializeField] private float moveSpeed = 1f;
-        [SerializeField] private float pointDetectDistance = .01f;
         [SerializeField] private SplineDrawer splineDrawer;
 
-        private OrientedPoint[] points;
-        private int nextPoint;
+        float t = 0;
+        float splineLength = 0;
 
-
-        void Start()
+        void Awake()
         {
-            points = SplineUtility.MakeBezierPoints(splineDrawer.spline);
-            transform.position = points[0].position;
+            splineLength = splineDrawer.spline.GetLength();
         }
 
         void Update()
         {
             if (isMoving)
             {
-                transform.position = Vector3.Lerp(transform.position, points[nextPoint].position, moveSpeed * Time.deltaTime);
-                transform.rotation = Quaternion.Lerp(transform.rotation, points[nextPoint].rotation, moveSpeed * Time.deltaTime);
+                OrientedPoint point = SplineUtility.Interpolation(splineDrawer.spline, t);
 
-                float distance = Vector3.Distance(transform.position, points[nextPoint].position);
-                if (distance <= pointDetectDistance)
-                {
-                    NextPoint();
-                }
-            }
-        }
+                transform.position = point.position;
+                transform.rotation = point.rotation;
 
-        private void NextPoint()
-        {
-            nextPoint++;
+                t += moveSpeed / splineLength * Time.deltaTime;
 
-            if (nextPoint >= points.Length)
-            {
-                if (splineDrawer.spline.loop)
+                if (t >= 1f)
                 {
-                    nextPoint %= points.Length;
-                }
-                else
-                {
-                    isMoving = false;
+                    if (splineDrawer.spline.loop)
+                    {
+                        t %= 1f;
+                    }
+                    else
+                    {
+                        isMoving = false;
+                    }
                 }
             }
         }
