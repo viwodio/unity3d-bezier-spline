@@ -65,22 +65,6 @@ namespace viwodio.BezierSpline
             return points;
         }
 
-        public static OrientedPoint Interpolation(Spline spline, float t)
-        {
-            t = Mathf.Clamp01(t);
-
-            int pointCount = spline.PointCount - 1;
-            if (spline.loop) pointCount ++;
-
-            int startIndex = Mathf.FloorToInt(pointCount * t);
-            int endIndex = Mathf.Min(startIndex + 1, pointCount);
-
-            SplinePoint startPoint = spline.GetSplinePointByIndex(startIndex);
-            SplinePoint endPoint = spline.GetSplinePointByIndex(endIndex);
-
-            return Interpolation(startPoint, endPoint, pointCount * t % 1);
-        }
-
         public static OrientedPoint Interpolation(SplinePoint startPoint, SplinePoint endPoint, float t)
         {
             Vector3 startPosition = startPoint.position;
