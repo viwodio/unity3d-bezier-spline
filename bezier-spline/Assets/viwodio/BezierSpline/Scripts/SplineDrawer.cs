@@ -14,6 +14,11 @@ namespace viwodio.BezierSpline
         private Vector3 lastPosition;
         private Quaternion lastRotation;
 
+        void Awake()
+        {
+            lastPosition = transform.position;
+        }
+
         void Update()
         {
             if (transform.position != lastPosition)
