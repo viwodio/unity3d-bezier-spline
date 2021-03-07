@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System;
 using System.Collections.Generic;
 
 namespace viwodio.BezierSpline
@@ -33,11 +31,21 @@ namespace viwodio.BezierSpline
 
         public static OrientedPoint[] MakeBezierPoints(Spline spline)
         {
-            List<OrientedPoint> points = new List<OrientedPoint>();
+            return MakeBezierPoints(spline, spline.segmentCount);
+        }
 
+        public static OrientedPoint[] MakeBezierPoints(Spline spline, int segmentCount)
+        {
+            List<OrientedPoint> points = new List<OrientedPoint>();
             spline.EachLine((start, end) => {
-                points.AddRange(MakeBezierPoints(start, end, spline.segmentCount));
+                points.AddRange(MakeBezierPoints(start, end, segmentCount));
             });
+
+            // Listeden çıkarmak için yinelenen noktaları buluyoruz
+            for (int i = segmentCount; i < points.Count - 1; i += segmentCount)
+            {
+                points.RemoveAt(i);
+            }
 
             return points.ToArray();
         }
@@ -55,6 +63,22 @@ namespace viwodio.BezierSpline
             }
 
             return points;
+        }
+
+        public static OrientedPoint Interpolation(Spline spline, float t)
+        {
+            t = Mathf.Clamp01(t);
+
+            int pointCount = spline.PointCount - 1;
+            if (spline.loop) pointCount ++;
+
+            int startIndex = Mathf.FloorToInt(pointCount * t);
+            int endIndex = Mathf.Min(startIndex + 1, pointCount);
+
+            SplinePoint startPoint = spline.GetSplinePointByIndex(startIndex);
+            SplinePoint endPoint = spline.GetSplinePointByIndex(endIndex);
+
+            return Interpolation(startPoint, endPoint, pointCount * t % 1);
         }
 
         public static OrientedPoint Interpolation(SplinePoint startPoint, SplinePoint endPoint, float t)
