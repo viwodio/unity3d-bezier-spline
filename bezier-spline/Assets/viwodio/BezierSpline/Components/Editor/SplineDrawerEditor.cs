@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
-using System.Collections;
 using UnityEditor;
 using System;
 
-namespace viwodio.BezierSpline
+namespace viwodio.BezierSpline.Component
 {
     [CustomEditor(typeof(SplineDrawer))]
     public class SplineDrawerEditor : Editor
@@ -18,7 +17,6 @@ namespace viwodio.BezierSpline
         private static bool showTangentHandles = false;
         private static InsertType insertType = InsertType.Raycast;
         private static bool isExpandedSplineSettings = false;
-        private bool isExpandedGizmoSettings = false;
 
         void OnEnable()
         {

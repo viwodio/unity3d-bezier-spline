@@ -25,9 +25,36 @@ namespace viwodio.BezierSpline
         public event InsertPointEvent onInsertPoint;
         public event RemovePointEvent onRemovePoint;
 
+        public SplinePoint FirstPoint
+        {
+            get => GetSplinePointByIndex(0);
+        }
+
+        public SplinePoint LastPoint
+        {
+            get
+            {
+                int lastIndex = PointCount - 1;
+                if (loop) lastIndex++;
+                return GetSplinePointByIndex(lastIndex);
+            }
+        }
+
         public int PointCount
         {
             get => splinePoints.Count;
+        }
+
+        public SplinePoint GetPointAfter(SplinePoint splinePoint)
+        {
+            int index = IndexOf(splinePoint);
+            return GetSplinePointByIndex(index + 1);
+        }
+
+        public SplinePoint GetPointBefore(SplinePoint splinePoint)
+        {
+            int index = IndexOf(splinePoint);
+            return GetSplinePointByIndex(index - 1);
         }
 
         public void InsertPointLast(Vector3 position, Quaternion rotation)

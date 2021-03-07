@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using UnityEngine;
 
-namespace viwodio.BezierSpline
+namespace viwodio.BezierSpline.Component
 {
     [RequireComponent(typeof(LineRenderer))]
     public class SplineRenderer : MonoBehaviour

@@ -2,7 +2,7 @@
 using System.Collections;
 using UnityEditor;
 
-namespace viwodio.BezierSpline
+namespace viwodio.BezierSpline.Component
 {
     [ExecuteAlways]
     public class SplineDrawer : MonoBehaviour
