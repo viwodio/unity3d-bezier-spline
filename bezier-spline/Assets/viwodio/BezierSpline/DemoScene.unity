@@ -573,8 +573,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d96a91262c306459c8766195b72053b0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  isMoving: 1
   moveSpeed: 3
+  lookSpeed: 8
   splineDrawer: {fileID: 909560607}
 --- !u!65 &2105710815
 BoxCollider:
