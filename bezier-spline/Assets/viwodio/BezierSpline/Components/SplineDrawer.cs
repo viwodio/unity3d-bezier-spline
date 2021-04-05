@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using UnityEditor;
 
 namespace viwodio.BezierSpline.Component
 {
@@ -11,15 +9,33 @@ namespace viwodio.BezierSpline.Component
 
         public Spline spline;
 
-        private Vector3 lastPosition;
-        private Quaternion lastRotation;
+        [SerializeField, HideInInspector] private Vector3 lastPosition;
+        [SerializeField, HideInInspector] private Quaternion lastRotation;
 
         void Awake()
         {
-            lastPosition = transform.position;
+            RecordLastPosRot();
         }
 
         void Update()
+        {
+            UpdateSplinePosRot();
+        }
+
+        public void RecordLastPosRot()
+        {
+            lastPosition = transform.position;
+            lastRotation = transform.rotation;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                UnityEditor.Undo.RecordObject(this, "Spline Drawer");
+            }
+#endif
+        }
+
+        public void UpdateSplinePosRot()
         {
             if (transform.position != lastPosition)
             {
@@ -28,7 +44,8 @@ namespace viwodio.BezierSpline.Component
 
             if (transform.rotation != lastRotation)
             {
-                spline.EachPoint((point) => {
+                spline.EachPoint((point) =>
+                {
 
                     // World to Local
                     Vector3 localPos = Quaternion.Inverse(lastRotation) * (point.position - transform.position);
@@ -43,34 +60,26 @@ namespace viwodio.BezierSpline.Component
                 });
             }
 
-            lastPosition = transform.position;
-            lastRotation = transform.rotation;
+            if (transform.position != lastPosition || transform.rotation != lastRotation)
+            {
+                RecordLastPosRot();
+            }
         }
 
 #if UNITY_EDITOR
         void OnDrawGizmos()
         {
-            if (Selection.Contains(gameObject.GetInstanceID())) return;
+            if (UnityEditor.Selection.Contains(gameObject.GetInstanceID())) return;
             else if (!gizmoSettings.drawGizmoAlways) return;
 
-            spline.EachLine((start, end) => {
+            spline.EachLine((start, end) =>
+            {
 
                 Gizmos.DrawSphere(end.position, gizmoSettings.radius * .5f);
                 Gizmos.DrawSphere(start.position, gizmoSettings.radius * .5f);
 
                 SplineHandles.DrawBezierLine(start, end, spline.segmentCount, gizmoSettings.thickness);
             });
-
-            /*
-            spline.EachPoint((point) => {
-
-                Gizmos.DrawSphere(point.leftTangent, gizmoSettings.radius * .5f);
-                Gizmos.DrawSphere(point.rightTangent, gizmoSettings.radius * .5f);
-
-                Handles.DrawAAPolyLine(gizmoSettings.thickness, point.position, point.rightTangent);
-                Handles.DrawAAPolyLine(gizmoSettings.thickness, point.leftTangent, point.position);
-            });
-            */
         }
 #endif
     }

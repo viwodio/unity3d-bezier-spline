@@ -6,12 +6,13 @@ namespace viwodio.BezierSpline.Component
 {
     public class MoveAlongSpline : MonoBehaviour
     {
-        public float moveSpeed = 2.5f;
-        public float lookSpeed = 8f;
+        public float moveSpeed = 2f;
+        public float lookSpeed = 1f;
+
         [SerializeField] private SplineDrawer splineDrawer;
 
-        public event Action onFinishPoint;
-        public bool IsMove => this.enabled;
+        public event Action onSplineFinish;
+        public bool IsMove { get; set; }
 
         private OrientedPoint[] waypoints;
         private int targetWaypointIndex;
@@ -19,41 +20,45 @@ namespace viwodio.BezierSpline.Component
 
         void Awake()
         {
-            waypoints = SplineUtility.MakeBezierPoints(splineDrawer.spline);
-            JumpToTarget();
+            if (splineDrawer != null)
+                SetSplineDrawer(splineDrawer);
+            else
+                IsMove = false;
+        }
+
+        public void SetSplineDrawer(SplineDrawer splineDrawer)
+        {
+            this.splineDrawer = splineDrawer;
+            targetWaypointIndex = 0;
+            GenerateWaypoints();
+        }
+
+        private void GenerateWaypoints()
+        {
+            waypoints = splineDrawer.spline.MakeBezierPointsBySegments();
         }
 
         void Update()
         {
-            Move();
+            if (IsMove)
+            {
+                if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.1f)
+                {
+                    ReachedTargetPoint();
+                }
+
+                transform.position = Vector3.MoveTowards(transform.position, targetWaypoint.position, moveSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.Lerp(transform.rotation, targetWaypoint.rotation, lookSpeed * Time.deltaTime);
+            }
         }
 
-        public void Move()
-        {
-            if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.1f)
-                ReachedTargetPoint();
-
-            transform.position = Vector3.MoveTowards(transform.position, targetWaypoint.position, moveSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetWaypoint.rotation, lookSpeed * Time.deltaTime);
-        }
-
-        public void StartMove()
-        {
-            enabled = true;
-        }
-
-        public void StopMove()
-        {
-            enabled = false;
-        }
-
-        public void Reset()
+        public void JumpToStartPoint()
         {
             targetWaypointIndex = 0;
-            StopMove();
+            JumpToTargetPoint();
         }
 
-        public void JumpToTarget()
+        public void JumpToTargetPoint()
         {
             transform.position = targetWaypoint.position;
             transform.rotation = targetWaypoint.rotation;
@@ -63,13 +68,14 @@ namespace viwodio.BezierSpline.Component
         {
             if (targetWaypointIndex == waypoints.Length - 1)
             {
-                onFinishPoint?.Invoke();
-
                 if (!splineDrawer.spline.loop)
                 {
-                    StopMove();
+                    IsMove = false;
+                    onSplineFinish?.Invoke();
                     return;
                 }
+
+                onSplineFinish?.Invoke();
             }
 
             targetWaypointIndex += 1;

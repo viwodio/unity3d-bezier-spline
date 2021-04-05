@@ -9,6 +9,7 @@ namespace viwodio.BezierSpline
     {
         public delegate void LineCallback(SplinePoint startPoint, SplinePoint endPoint);
         public delegate void PointCallback(SplinePoint point);
+        public delegate void PointWithIndexCallback(SplinePoint point, int index);
         public delegate void InsertPointEvent(SplinePoint insertedPoint);
         public delegate void RemovePointEvent(SplinePoint splinePoint);
 
@@ -81,6 +82,9 @@ namespace viwodio.BezierSpline
 
         public void RemovePoint(SplinePoint splinePoint)
         {
+            if (PointCount <= 2)
+                throw new CantDeleteMorePointsException();
+
             bool isRemoved = splinePoints.Remove(splinePoint);
 
             if (isRemoved)
@@ -187,7 +191,7 @@ namespace viwodio.BezierSpline
 
             SplinePoint splinePoint = GetSplinePointByIndex(pointIndex);
             SplinePoint nextSplinePoint = GetSplinePointByIndex(nextPointIndex);
-            OrientedPoint directionalPoint = SplineUtility.Interpolation(splinePoint, nextSplinePoint, .5f);
+            OrientedPoint directionalPoint = SplinePoint.Interpolation(splinePoint, nextSplinePoint, .5f);
 
             InsertPoint(nextPointIndex, directionalPoint.position, directionalPoint.rotation);
         }
@@ -218,9 +222,19 @@ namespace viwodio.BezierSpline
 
         public void EachPoint(PointCallback callback)
         {
-            for (int i = 0; i < PointCount; i++)
+            int count = PointCount;
+            for (int i = 0; i < count; i++)
             {
                 callback?.Invoke(GetSplinePointByIndex(i));
+            }
+        }
+
+        public void EachPointWithIndex(PointWithIndexCallback callback)
+        {
+            int count = PointCount;
+            for (int i = 0; i < count; i++)
+            {
+                callback?.Invoke(GetSplinePointByIndex(i), i);
             }
         }
 
@@ -234,9 +248,57 @@ namespace viwodio.BezierSpline
             return positions;
         }
 
-        public float GetLength()
+        public float CalculateLength()
         {
-            return SplineUtility.SplineLength(this);
+            float length = 0;
+
+            EachLine((start, end) => {
+                length += SplinePoint.CalculateLength(start, end, segmentCount);
+            });
+
+            return length;
+        }
+
+        public OrientedPoint[] MakeBezierPointsBySegments()
+        {
+            List<OrientedPoint> points = new List<OrientedPoint>();
+            EachLine((start, end) => {
+
+                /*
+                 * birleşme noktalarında çakışan nokta olmaması için
+                 * önceki line'ın bitiş noktasını siliyoruz.
+                 */
+                if (points.Count > 0) points.RemoveAt(points.Count - 1);
+
+                points.AddRange(SplinePoint.MakeBezierPoints(start, end, segmentCount));
+            });
+
+            return points.ToArray();
+        }
+
+        public OrientedPoint[] MakeBezierPointsByDistance(float pointDistance = 1)
+        {
+            List<OrientedPoint> resultPoints = new List<OrientedPoint>();
+
+            float distanceOffset = 0;
+
+            EachLine((start, end) => {
+                float length = SplinePoint.CalculateLength(start, end, segmentCount);
+                float offset = distanceOffset;
+
+                while (offset <= length)
+                {
+                    float t = offset / length;
+                    OrientedPoint point = SplinePoint.Interpolation(start, end, t);
+                    resultPoints.Add(point);
+
+                    offset += pointDistance;
+                }
+
+                distanceOffset = offset % length;
+            });
+
+            return resultPoints.ToArray();
         }
     }
 }

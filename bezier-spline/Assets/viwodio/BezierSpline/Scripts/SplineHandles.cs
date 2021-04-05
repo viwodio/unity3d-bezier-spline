@@ -1,11 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 namespace viwodio.BezierSpline
 {
     public class SplineHandles
     {
+        #if UNITY_EDITOR
         public static Color lineColor = Color.white;
         public static Color pointColor = Color.green;
         public static Color tangentPointColor = Color.cyan;
@@ -18,7 +21,7 @@ namespace viwodio.BezierSpline
         {
             using (new Handles.DrawingScope(lineColor))
             {
-                OrientedPoint[] bezierPoints = SplineUtility.MakeBezierPoints(start, end, segmentCount);
+                OrientedPoint[] bezierPoints = SplinePoint.MakeBezierPoints(start, end, segmentCount);
 
                 for (int i = 0; i < bezierPoints.Length - 1; i++)
                 {
@@ -27,7 +30,7 @@ namespace viwodio.BezierSpline
                     Handles.DrawAAPolyLine(thickness, startPosition, endPosition);
                 }
 
-                OrientedPoint arrowPoint = SplineUtility.Interpolation(start, end, .5f);//SplineUtility.MakeBezierPoints(start, end, arrowCount);
+                OrientedPoint arrowPoint = SplinePoint.Interpolation(start, end, .5f);
                 Handles.DrawAAPolyLine(
                     arrowPoint.LocalToWorld(arrowLeftPoint * arrowWidth),
                     arrowPoint.position,
@@ -39,7 +42,7 @@ namespace viwodio.BezierSpline
         {
             using (new Handles.DrawingScope(lineColor))
             {
-                OrientedPoint[] bezierPoints = SplineUtility.MakeBezierPoints(start, end, segmentCount);
+                OrientedPoint[] bezierPoints = SplinePoint.MakeBezierPoints(start, end, segmentCount);
 
                 for (int i = 0; i < bezierPoints.Length - 1; i++)
                 {
@@ -129,5 +132,6 @@ namespace viwodio.BezierSpline
         {
             return Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint;
         }
+        #endif
     }
 }

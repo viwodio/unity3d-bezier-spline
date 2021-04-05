@@ -19,24 +19,24 @@ namespace viwodio.BezierSpline
         public Vector3 right => rotation * Vector3.right;
         public Vector3 forward => rotation * Vector3.forward;
 
-        public Vector3 WorldToLocal(Vector3 worldPos)
+        public Vector3 WorldToLocal(Vector3 position)
         {
-            return Quaternion.Inverse(rotation) * (worldPos - position);
+            return Quaternion.Inverse(rotation) * (position - this.position);
         }
 
-        public Vector3 LocalToWorld(Vector3 localPos)
+        public Vector3 LocalToWorld(Vector3 position)
         {
-            return position + rotation * localPos;
+            return this.position + rotation * position;
         }
 
-        public Quaternion WorldToLocal(Quaternion worldRotation)
+        public Quaternion WorldToLocalRot(Quaternion rotation)
         {
-            return Quaternion.Inverse(rotation) * worldRotation;
+            return Quaternion.Inverse(this.rotation) * rotation;
         }
 
-        public Quaternion LocalToWorld(Quaternion localRotation)
+        public Quaternion LocalToWorldRot(Quaternion rotation)
         {
-            return rotation * localRotation;
+            return this.rotation * rotation;
         }
     }
 }

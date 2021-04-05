@@ -100,5 +100,48 @@ namespace viwodio.BezierSpline
             localLeftTangent = Vector3.left * 1f;
             localRightTangent = Vector3.right * 1f;
         }
+
+        public static float CalculateLength(SplinePoint startPoint, SplinePoint endPoint, int segmentCount)
+        {
+            float length = 0;
+            OrientedPoint[] points = MakeBezierPoints(startPoint, endPoint, segmentCount);
+
+            for (int i = 0; i < points.Length - 1; i++)
+                length += Vector3.Distance(points[i].position, points[i + 1].position);
+
+            return length;
+        }
+
+        public static OrientedPoint[] MakeBezierPoints(SplinePoint startPoint, SplinePoint endPoint, int segmentCount)
+        {
+            segmentCount++;
+
+            OrientedPoint[] points = new OrientedPoint[segmentCount];
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                float t = (float)i / (points.Length - 1);
+                points[i] = Interpolation(startPoint, endPoint, t);
+            }
+
+            return points;
+        }
+
+        public static OrientedPoint Interpolation(SplinePoint startPoint, SplinePoint endPoint, float t)
+        {
+            Vector3 startPosition = startPoint.position;
+            Vector3 startTangent = startPoint.rightTangent;
+
+            if (startPoint.TangentMode == TangentMode.Linear)
+                startTangent = startPoint.GetLinearRightTangent(endPoint);
+
+            Vector3 endPosition = endPoint.position;
+            Vector3 endTangent = endPoint.leftTangent;
+
+            if (endPoint.TangentMode == TangentMode.Linear)
+                endTangent = endPoint.GetLinearLeftTangent(startPoint);
+
+            return SplineUtility.Interpolation(startPosition, startTangent, endTangent, endPosition, t);
+        }
     }
 }

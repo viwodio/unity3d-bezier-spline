@@ -10,13 +10,17 @@ namespace viwodio.BezierSpline.Component
         private static event Action OnScriptReload;
 
         private SplineDrawer splineDrawer;
-        private SplinePoint selectedPoint;
         private int selectedPointIndex;
         private SerializedProperty propGizmoSettings;
 
         private static bool showTangentHandles = false;
         private static InsertType insertType = InsertType.Raycast;
         private static bool isExpandedSplineSettings = false;
+
+        private SplinePoint GetSelectedPoint()
+        {
+            return splineDrawer.spline.GetSplinePointByIndex(selectedPointIndex);
+        }
 
         void OnEnable()
         {
@@ -36,23 +40,22 @@ namespace viwodio.BezierSpline.Component
             SelectPoint(selectedPointIndex, false);
         }
 
-        private void FocusSelectedPoint()
-        {
-            FocusPoint(selectedPoint);
-        }
-
         private void SelectPoint(int index, bool focus)
         {
-            selectedPoint = splineDrawer.spline.GetSplinePointByIndex(index);
-            selectedPointIndex = index;
+            selectedPointIndex = Mathf.Clamp(index, 0, splineDrawer.spline.PointCount - 1);
 
             if (focus)
             {
-                FocusPoint(selectedPoint);
+                FocusPoint(GetSelectedPoint());
             }
 
             Repaint();
             SceneView.RepaintAll();
+        }
+
+        private void FocusSelectedPoint()
+        {
+            FocusPoint(GetSelectedPoint());
         }
 
         private void FocusPoint(SplinePoint point)
@@ -63,11 +66,6 @@ namespace viwodio.BezierSpline.Component
             bounds.center = point.position;
             bounds.size = Vector3.one * splineDrawer.gizmoSettings.radius * 10;
             SceneView.lastActiveSceneView.Frame(bounds, false);
-        }
-
-        private void SelectPoint(SplinePoint point, bool focus)
-        {
-            SelectPoint(splineDrawer.spline.IndexOf(point), focus);
         }
 
         private void OnSceneGUI()
@@ -83,14 +81,14 @@ namespace viwodio.BezierSpline.Component
 
             });
 
-            splineDrawer.spline.EachPoint((point) => {
+            splineDrawer.spline.EachPointWithIndex((point, index) => {
 
                 bool pointIsClicked = SplineHandles.DrawPointButton(point, splineDrawer.gizmoSettings.radius);
                 bool tangentIsClicked = SplineHandles.DrawTangentsButton(point, splineDrawer.gizmoSettings.radius, splineDrawer.gizmoSettings.thickness);
 
                 if (pointIsClicked || tangentIsClicked)
                 {
-                    SelectPoint(point, false);
+                    SelectPoint(index, false);
                 }
 
             });
@@ -102,6 +100,7 @@ namespace viwodio.BezierSpline.Component
 
         private void DrawSelectedPointSceneGUI()
         {
+            SplinePoint selectedPoint = GetSelectedPoint();
             if (selectedPoint == null) return;
 
             EditorGUI.BeginChangeCheck();
@@ -316,10 +315,10 @@ namespace viwodio.BezierSpline.Component
             using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
             {
                 EditorGUI.BeginChangeCheck();
-                selectedPointIndex = EditorGUILayout.IntField("Selected Point", selectedPointIndex);
+                int index = EditorGUILayout.IntField("Selected Point", selectedPointIndex);
                 if (EditorGUI.EndChangeCheck())
                 {
-                    SelectPoint(selectedPointIndex, false);
+                    SelectPoint(index, false);
                 }
             }
         }
@@ -341,6 +340,7 @@ namespace viwodio.BezierSpline.Component
 
         private void DrawSelectedPointGUI()
         {
+            SplinePoint selectedPoint = GetSelectedPoint();
             if (selectedPoint == null) return;
 
             Shortcuts();
@@ -349,8 +349,8 @@ namespace viwodio.BezierSpline.Component
             {
                 EditorGUILayout.LabelField("Selected Point Settings", EditorStyles.boldLabel);
 
-                DrawSelectedPointTransforms();
-                DrawTangentModeGUI();
+                DrawPointHandles(selectedPoint);
+                DrawTangentModeGUI(selectedPoint);
                 DrawTangentHandlesToggleGUI();
 
                 if (GUILayout.Button("Remove Selected Point (⌘⇧D)"))
@@ -387,34 +387,39 @@ namespace viwodio.BezierSpline.Component
 
         private void RemoveSelectedPoint()
         {
-            Undo.RecordObject(splineDrawer, "Remove Point");
-            splineDrawer.spline.RemovePoint(selectedPointIndex);
-            SelectPoint(Mathf.Clamp(selectedPointIndex, 0, splineDrawer.spline.PointCount - 1), false);
+            RemovePoint(selectedPointIndex);
         }
 
-        private void DrawSelectedPointTransforms()
+        private void RemovePoint(int index)
+        {
+            Undo.RecordObject(splineDrawer, "Remove Point");
+            splineDrawer.spline.RemovePoint(index);
+            SelectPoint(Mathf.Clamp(index, 0, splineDrawer.spline.PointCount - 1), false);
+        }
+
+        private void DrawPointHandles(SplinePoint point)
         {
             EditorGUI.BeginChangeCheck();
-            Vector3 position = EditorGUILayout.Vector3Field("Position", selectedPoint.position);
-            Vector3 rotation = EditorGUILayout.Vector3Field("Rotation", selectedPoint.rotation.eulerAngles);
+            Vector3 position = EditorGUILayout.Vector3Field("Position", point.position);
+            Vector3 rotation = EditorGUILayout.Vector3Field("Rotation", point.rotation.eulerAngles);
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(splineDrawer, "Spline Point Transform");
-                selectedPoint.position = position;
-                selectedPoint.rotation = Quaternion.Euler(rotation);
+                point.position = position;
+                point.rotation = Quaternion.Euler(rotation);
                 SceneView.RepaintAll();
             }
         }
 
-        private void DrawTangentModeGUI()
+        private void DrawTangentModeGUI(SplinePoint point)
         {
             EditorGUI.BeginChangeCheck();
-            TangentMode tangentMode = (TangentMode)EditorGUILayout.EnumPopup("Tangent Mode", selectedPoint.TangentMode);
+            TangentMode tangentMode = (TangentMode)EditorGUILayout.EnumPopup("Tangent Mode", point.TangentMode);
 
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(splineDrawer, "Spline Point Settings");
-                selectedPoint.SetTangentMode(tangentMode);
+                point.SetTangentMode(tangentMode);
                 SceneView.RepaintAll();
             }
         }
@@ -436,16 +441,12 @@ namespace viwodio.BezierSpline.Component
 
         private void SelectNextPoint()
         {
-            if (selectedPoint == null) return;
-
-            SelectPoint(Mathf.Min(splineDrawer.spline.PointCount - 1, selectedPointIndex + 1), false);
+            SelectPoint(selectedPointIndex + 1, false);
         }
 
         private void SelectPreviousPoint()
         {
-            if (selectedPoint == null) return;
-
-            SelectPoint(Mathf.Max(0, selectedPointIndex - 1), false);
+            SelectPoint(selectedPointIndex - 1, false);
         }
 
         private void ReverseSpline()
@@ -471,8 +472,6 @@ namespace viwodio.BezierSpline.Component
 
         private void Shortcuts()
         {
-            if (selectedPoint == null) return;
-
             if(Event.current.type == EventType.KeyDown)
             {
                 if (Event.current.keyCode == KeyCode.F)
