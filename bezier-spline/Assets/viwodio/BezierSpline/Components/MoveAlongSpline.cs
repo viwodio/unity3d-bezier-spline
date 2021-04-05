@@ -12,7 +12,7 @@ namespace viwodio.BezierSpline.Component
         [SerializeField] private SplineDrawer splineDrawer;
 
         public event Action onSplineFinish;
-        public bool IsMove { get; set; }
+        public bool isMove;
 
         private OrientedPoint[] waypoints;
         private int targetWaypointIndex;
@@ -23,7 +23,7 @@ namespace viwodio.BezierSpline.Component
             if (splineDrawer != null)
                 SetSplineDrawer(splineDrawer);
             else
-                IsMove = false;
+                isMove = false;
         }
 
         public void SetSplineDrawer(SplineDrawer splineDrawer)
@@ -40,7 +40,7 @@ namespace viwodio.BezierSpline.Component
 
         void Update()
         {
-            if (IsMove)
+            if (isMove)
             {
                 if (Vector3.Distance(transform.position, targetWaypoint.position) < 0.1f)
                 {
@@ -70,7 +70,7 @@ namespace viwodio.BezierSpline.Component
             {
                 if (!splineDrawer.spline.loop)
                 {
-                    IsMove = false;
+                    isMove = false;
                     onSplineFinish?.Invoke();
                     return;
                 }
